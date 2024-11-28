@@ -22,7 +22,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 ThreeWire mywire(dat, clk, rst);
 RtcDS1302<ThreeWire> rtc(mywire);
 
-File myfile;
+File myFile;
 
 bool set_flag = 0;
 bool up_flag = 0;
@@ -36,7 +36,7 @@ int humidity = 0;
 int tempVal = 0;
 int humVal = 0;
 
-void printDateTime(const RtcDateTime& dt)
+String printDateTime(const RtcDateTime& dt)
 {
     char datestring[20];
 
@@ -49,11 +49,14 @@ void printDateTime(const RtcDateTime& dt)
             dt.Hour(),
             dt.Minute(),
             dt.Second() );
-    Serial.print(datestring);
+    //Serial.print(datestring);
+
+    return datestring;
 }
 
 void setup() {
   // put your setup code here, to run once:
+    pinMode(cs, OUTPUT);
     int result = dht11.readTemperatureHumidity(temperature, humidity);
     tempVal = temperature;
     humVal = humidity;
@@ -69,14 +72,16 @@ void setup() {
     pinMode(btn_up, INPUT);
     pinMode(btn_down, INPUT);
 
-    pinMode(cs, OUTPUT);
+    initSD();
+
 }
 
-void showTempHumid()
+String showTempHumid()
 {
     int result = dht11.readTemperatureHumidity(temperature, humidity);
     String s_temperature = "Temp: ";
     String s_humidity = "Humidity: ";
+    String finalString = "";
 
     if(result == 0)
     {
@@ -86,9 +91,9 @@ void showTempHumid()
         s_humidity += (String)humidity;
         s_humidity += "%";
 
-        Serial.print(s_temperature);
-        Serial.print(", ");
-        Serial.println(s_humidity);
+        // Serial.print(s_temperature);
+        // Serial.print(", ");
+        // Serial.println(s_humidity);
 
         lcd.setCursor(0,0);
         lcd.print(s_temperature);
@@ -102,6 +107,12 @@ void showTempHumid()
         lcd.setCursor(0,0);
         lcd.print(DHT11::getErrorString(result));
     }
+
+    finalString = s_temperature;
+    finalString += ",";
+    finalString += s_humidity;
+
+    return finalString;
 }
 
 void setTemp()
@@ -167,7 +178,7 @@ void clear()
     for(int i = 0; i < 16; i++) lcd.write(' ');
 }
 
-void GetDateTime()
+String GetDateTime()
 {
     RtcDateTime now = rtc.GetDateTime();
 
@@ -180,47 +191,37 @@ void GetDateTime()
         //    1) the battery on the device is low or even missing and the power line was disconnected
         Serial.println("RTC lost confidence in the DateTime!");
     }
+
+    return printDateTime(now);
 }
 
 void initSD()
 {
-    // if(SD.begin())
-    // {
-    //     Serial.println("SD Card ready");
-    // }
-    // else
-    // {
-    //     Serial.println("SD Card init failed");
-    //     return;
-    // }
+    if(SD.begin())
+    {
+        Serial.println("SD Card ready");
+    }
+    else
+    {
+        Serial.println("SD Card init failed");
+        return;
+    }
+}
 
-    // myfile = SD.open("test.txt", FILE_WRITE);
-    // if(myfile)
-    // {
-    //     Serial.println("Writing ti file...");
-    //     myfile.println("Testing text 123");
-    //     myfile.close();
-    //     Serial.println("Finished");
-    // }
-    // else
-    // {
-    //     Serial.println("Error opening test.txt");
-    // }
-
-    // myfile = SD.open("test.txt");
-    // if(myfile)
-    // {
-    //     Serial.println("Read: ");
-    //     while(myfile.available())
-    //     {
-    //         Serial.write(myfile.read());
-    //     }
-    //     myfile.close();
-    // }
-    // else
-    // {
-    //     Serial.println("Error opening test.txt");
-    // }
+void sdLog()
+{
+    myFile = SD.open("test.txt", FILE_WRITE);
+    if(myFile)
+    {
+        myFile.print(GetDateTime());
+        myFile.print(",");
+        myFile.println(showTempHumid());
+        myFile.close();
+    }
+    else
+    {
+        Serial.println("error opening file");
+    }
 }
 
 void initRTC()
@@ -274,7 +275,7 @@ void initRTC()
 
 void loop() {
   // put your main code here, to run repeatedly:
-    GetDateTime();
+    sdLog();
     if(digitalRead(btn_set) && !set_flag) set_flag = 1;
 
     if(!digitalRead(btn_set) && set_flag)
@@ -287,11 +288,12 @@ void loop() {
 
     switch(mode)
     {
-        case 0: showTempHumid(); break; 
+        case 0: Serial.println(showTempHumid()); break; 
         case 1: setTemp(); break;
         case 2: setHumid(); break;
     }
 
-    analogWrite(relay, (temperature >= tempVal || humidity >= humVal) ? 255 : 0);
+    digitalWrite(relay, (temperature >= tempVal || humidity >= humVal));
     Serial.println((temperature >= tempVal || humidity >= humVal) ? "relay on" : "relay off");
+    delay(1000);
 }
