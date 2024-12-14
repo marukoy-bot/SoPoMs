@@ -109,7 +109,7 @@ String showTempHumid()
     }
 
     finalString = s_temperature;
-    finalString += ",";
+    finalString += ", ";
     finalString += s_humidity;
 
     return finalString;
@@ -182,7 +182,7 @@ String GetDateTime()
 {
     RtcDateTime now = rtc.GetDateTime();
 
-    printDateTime(now);
+    Serial.print(printDateTime(now));
     Serial.print(" | ");
 
     if (!now.IsValid())
@@ -288,7 +288,7 @@ void loop() {
 
     switch(mode)
     {
-        case 0: Serial.println(showTempHumid()); break; 
+        case 0: Serial.print(showTempHumid()); Serial.print(" | "); break; 
         case 1: setTemp(); break;
         case 2: setHumid(); break;
     }
