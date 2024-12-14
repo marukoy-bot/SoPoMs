@@ -1,3 +1,26 @@
+//Arduino UNO
+
+//SD Card Module
+//CS	10
+//SCK	13
+//MOSI	11
+//MISO	12
+
+//DS1302 RTC
+//CLK	7
+//DAT	8
+//RST	9
+
+//DHT11 Temp and Humidity Sensor
+//DATA	2
+
+//LCD I2C 16x2
+//SCL	A5
+//SDA	A4
+
+//5v Relay Module
+//S		A3
+
 #include <DHT11.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
