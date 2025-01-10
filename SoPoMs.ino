@@ -18,8 +18,12 @@
 //SCL	A5
 //SDA	A4
 
-//5v Relay Module
+//5v Relay Module (pump)
 //S		A3
+
+//5v Relay Module (humidifier)
+//S1    A0
+//S2    A1
 
 #include <DHT11.h>
 #include <LiquidCrystal_I2C.h>
@@ -38,6 +42,8 @@
 #define rst 9
 #define cs 10
 #define relay A3
+#define mist0 A0
+#define mist1 A1
 #define countof(a) (sizeof(a) / sizeof(a[0]))
 
 DHT11 dht11(2);
@@ -56,8 +62,11 @@ int mode = 0;
 int temperature = 0;
 int humidity = 0;
 
-int tempVal = 0;
-int humVal = 0;
+int tempVal1 = 0;
+int humVal1 = 0;
+
+int tempVal2 = 0;
+int humVal2 = 0;
 
 String printDateTime(const RtcDateTime& dt)
 {
@@ -80,9 +89,14 @@ String printDateTime(const RtcDateTime& dt)
 void setup() {
   // put your setup code here, to run once:
     pinMode(cs, OUTPUT);
+    pinMode(relay, OUTPUT);
+    pinMode(mist0, OUTPUT);
+    pinMode(mist1, OUTPUT);
     int result = dht11.readTemperatureHumidity(temperature, humidity);
-    tempVal = temperature;
-    humVal = humidity;
+    tempVal1 = temperature;
+    humVal1 = humidity;
+    tempVal2 = temperature;
+    humVal2 = humidity;
 
     showTempHumid();
     mode = 0;
@@ -114,10 +128,6 @@ String showTempHumid()
         s_humidity += (String)humidity;
         s_humidity += "%";
 
-        // Serial.print(s_temperature);
-        // Serial.print(", ");
-        // Serial.println(s_humidity);
-
         lcd.setCursor(0,0);
         lcd.print(s_temperature);
         delay(100);
@@ -132,73 +142,124 @@ String showTempHumid()
     }
 
     finalString = s_temperature;
-    finalString += ", ";
+    finalString += ",";
     finalString += s_humidity;
 
     return finalString;
 }
 
-void setTemp()
+void setTemp(int mode)
 {
-    String s_temp = "Trigger Temp (";
-    s_temp += (char)223;
-    s_temp += ")";
-    if(digitalRead(btn_up)) up_flag = 1;
-    if(digitalRead(btn_down)) down_flag = 1;
-
-    if(!digitalRead(btn_up) && up_flag)
+    if(mode == 1)
     {
-        up_flag = 0;
-        tempVal++;
-    }
+        String s_temp = "Trig Temp 1(";
+        s_temp += (char)223;
+        s_temp += ")";
+        if(digitalRead(btn_up)) up_flag = 1;
+        if(digitalRead(btn_down)) down_flag = 1;
 
-    if(!digitalRead(btn_down) && down_flag)
+        if(!digitalRead(btn_up) && up_flag)
+        {
+            up_flag = 0;
+            tempVal1++;
+        }
+
+        if(!digitalRead(btn_down) && down_flag)
+        {
+            down_flag = 0;
+            tempVal1--;
+        }
+
+        lcd.setCursor(0,0);
+        lcd.print(s_temp);
+
+        lcd.setCursor(0,1);
+        lcd.print(tempVal1);
+
+        Serial.print("Temp 1: ");
+        Serial.println(tempVal1);
+    }
+    else if (mode == 2)
     {
-        down_flag = 0;
-        tempVal--;
+        String s_temp = "Trig Temp 2(";
+        s_temp += (char)223;
+        s_temp += ")";
+        if(digitalRead(btn_up)) up_flag = 1;
+        if(digitalRead(btn_down)) down_flag = 1;
+
+        if(!digitalRead(btn_up) && up_flag)
+        {
+            up_flag = 0;
+            tempVal2++;
+        }
+
+        if(!digitalRead(btn_down) && down_flag)
+        {
+            down_flag = 0;
+            tempVal2--;
+        }
+        lcd.setCursor(0, 0);
+        lcd.print(s_temp);
+
+        lcd.setCursor(0,1);
+        lcd.print(tempVal2);
+        Serial.print("Temp 2: ");
+        Serial.println(tempVal2);
     }
-
-    lcd.setCursor(0,0);
-    lcd.print(s_temp);
-
-    lcd.setCursor(0,1);
-    lcd.print(tempVal);
-    Serial.print("Temp val: ");
-    Serial.println(tempVal);
 }
 
-void setHumid()
+void setHumid(int mode)
 {
-    if(digitalRead(btn_up)) up_flag = 1;
-    if(digitalRead(btn_down)) down_flag = 1;
-
-    if(!digitalRead(btn_up) && up_flag)
+    if (mode == 1)
     {
-        up_flag = 0;
-        humVal++;
-    }
+        if(digitalRead(btn_up)) up_flag = 1;
+        if(digitalRead(btn_down)) down_flag = 1;
 
-    if(!digitalRead(btn_down) && down_flag)
+        if(!digitalRead(btn_up) && up_flag)
+        {
+            up_flag = 0;
+            humVal1++;
+        }
+
+        if(!digitalRead(btn_down) && down_flag)
+        {
+            down_flag = 0;
+            humVal1--;
+        }
+        lcd.setCursor(0, 0);
+        lcd.print("Trig Hmdty 1(%) ");
+
+        lcd.setCursor(0,1);
+        lcd.print(humVal1);
+        Serial.print("hum val 1: ");
+        Serial.println(humVal1);
+
+    }
+    else if (mode == 2)
     {
-        down_flag = 0;
-        humVal--;
+        if(digitalRead(btn_up)) up_flag = 1;
+        if(digitalRead(btn_down)) down_flag = 1;
+
+        if(!digitalRead(btn_up) && up_flag)
+        {
+            up_flag = 0;
+            humVal2++;
+        }
+
+        if(!digitalRead(btn_down) && down_flag)
+        {
+            down_flag = 0;
+            humVal2--;
+        }
+        lcd.setCursor(0, 0);
+        lcd.print("Trig Hmdty 2(%) ");
+
+        lcd.setCursor(0,1);
+        lcd.print(humVal2);
+        Serial.print("hum val 2: ");
+        Serial.println(humVal2);
+
     }
-
-    lcd.setCursor(0,0);
-    lcd.print("Trigger Humidity (%)");
-
-    lcd.setCursor(0,1);
-    lcd.print(humVal);
-    Serial.print("hum val: ");
-    Serial.println(humVal);
-}
-
-void clear()
-{
-    lcd.setCursor(0,0);
-    for(int i = 0; i < 16; i++) lcd.write(' ');
-    lcd.setCursor(0,1);
-    for(int i = 0; i < 16; i++) lcd.write(' ');
 }
 
 String GetDateTime()
@@ -210,8 +271,6 @@ String GetDateTime()
 
     if (!now.IsValid())
     {
-        // Common Causes:
-        //    1) the battery on the device is low or even missing and the power line was disconnected
         Serial.println("RTC lost confidence in the DateTime!");
     }
 
@@ -237,8 +296,20 @@ void sdLog()
     if(myFile)
     {
         myFile.print(GetDateTime());
-        myFile.print(",");
-        myFile.println(showTempHumid());
+        myFile.print(" | ");
+        myFile.print(showTempHumid());
+        myFile.print(" | ");
+        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "pump on | " : "pump off | ");
+        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "mist_1 on | " : "mist_1 off | ");
+        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "mist_2 on | " : "mist_2 off | ");
+        myFile.print("trig temp 1: ");
+        myFile.print(tempVal1);
+        myFile.print(" | trig temp 2: ");
+        myFile.print(tempVal2);
+        myFile.print(" | trig hmdty 1: ");
+        myFile.print(humVal1);
+        myFile.print(" | trig hmdty 1: ");
+        myFile.println(humVal1);
         myFile.close();
     }
     else
@@ -260,10 +331,6 @@ void initRTC()
 
     if (!rtc.IsDateTimeValid()) 
     {
-        // Common Causes:
-        //    1) first time you ran and the device wasn't running yet
-        //    2) the battery on the device is low or even missing
-
         Serial.println("RTC lost confidence in the DateTime!");
         rtc.SetDateTime(compiled);
     }
@@ -298,25 +365,70 @@ void initRTC()
 
 void loop() {
   // put your main code here, to run repeatedly:
-    sdLog();
     if(digitalRead(btn_set) && !set_flag) set_flag = 1;
 
     if(!digitalRead(btn_set) && set_flag)
     {
-        clear();
+        lcd.clear();
         set_flag = 0;
         mode++;
-        if(mode > 2) mode = 0;
+        if(mode > 4) mode = 0;
     }
 
     switch(mode)
     {
-        case 0: Serial.print(showTempHumid()); Serial.print(" | "); break; 
-        case 1: setTemp(); break;
-        case 2: setHumid(); break;
+        case 0: sdLog(); Serial.print(showTempHumid()); Serial.print(" | "); break; 
+        case 1: setTemp(1); break;
+        case 2: setTemp(2);  break;
+        case 3: setHumid(1); break;
+        case 4: setHumid(2); break;
     }
 
-    digitalWrite(relay, (temperature >= tempVal || humidity >= humVal));
-    Serial.println((temperature >= tempVal || humidity >= humVal) ? "relay on" : "relay off");
-    delay(1000);
+    digitalWrite(relay, (temperature >= tempVal1 || humidity >= humVal1));
+    Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "relay on | " : "relay off | ");
+
+    digitalWrite(mist0, !(temperature >= tempVal1 || humidity >= humVal1));
+    Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "mist0 on | " : "mist0 off | ");
+
+    digitalWrite(mist1, !(temperature >= tempVal2 || humidity >= humVal2));
+    Serial.print((temperature >= tempVal2 || humidity >= humVal2) ? "mist1 on | " : "mist1 off | ");
+
+    Serial.print(humidity);
+    Serial.print(" | ");
+    Serial.print(tempVal1);
+    Serial.print(" | ");
+    Serial.print(tempVal2);
+    Serial.print(" | ");
+    Serial.print(humVal1);
+    Serial.print(" | ");
+    Serial.println(humVal2);
+
+    delay(250);
+}
+
+bool isOn = false;
+void onMist(int pin)
+{
+    if(!isOn)
+    {
+        isOn = true;
+        digitalWrite(pin, HIGH);
+        delay(250);
+        digitalWrite(pin, LOW);
+    }
+}
+
+void offMist(int pin)
+{
+    if(isOn)
+    {
+        isOn = false;
+        digitalWrite(pin, HIGH);
+        delay(250);
+        digitalWrite(pin, LOW);
+
+        digitalWrite(pin, HIGH);
+        delay(250);
+        digitalWrite(pin, LOW);
+    }
 }
