@@ -92,25 +92,25 @@ void setup() {
     pinMode(relay, OUTPUT);
     pinMode(mist0, OUTPUT);
     pinMode(mist1, OUTPUT);
+
     int result = dht11.readTemperatureHumidity(temperature, humidity);
+    showTempHumid();
     tempVal1 = temperature;
     humVal1 = humidity;
     tempVal2 = temperature;
     humVal2 = humidity;
-
-    showTempHumid();
     mode = 0;
 
-    Serial.begin(9600);
     lcd.init();
     lcd.backlight();
+    Serial.begin(9600);
 
     pinMode(btn_set, INPUT);
     pinMode(btn_up, INPUT);
     pinMode(btn_down, INPUT);
 
+    //initRTC();
     initSD();
-
 }
 
 String showTempHumid()
@@ -129,10 +129,14 @@ String showTempHumid()
         s_humidity += "%";
 
         lcd.setCursor(0,0);
-        lcd.print(s_temperature);
-        delay(100);
+        lcd.print("Temp: ");
+        lcd.print(temperature);
+        lcd.print((char)223);
+        lcd.print("C");
         lcd.setCursor(0,1);
-        lcd.print(s_humidity);
+        lcd.print("Humidity: ");
+        lcd.print(humidity);
+        lcd.print("%");
     }
      else
     {
@@ -142,7 +146,7 @@ String showTempHumid()
     }
 
     finalString = s_temperature;
-    finalString += ",";
+    finalString += " | ";
     finalString += s_humidity;
 
     return finalString;
@@ -266,12 +270,10 @@ String GetDateTime()
 {
     RtcDateTime now = rtc.GetDateTime();
 
-    Serial.print(printDateTime(now));
-    Serial.print(" | ");
-
     if (!now.IsValid())
     {
         Serial.println("RTC lost confidence in the DateTime!");
+        return "invalid date time";
     }
 
     return printDateTime(now);
@@ -296,20 +298,22 @@ void sdLog()
     if(myFile)
     {
         myFile.print(GetDateTime());
-        myFile.print(" | ");
-        myFile.print(showTempHumid());
-        myFile.print(" | ");
-        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "pump on | " : "pump off | ");
-        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "mist_1 on | " : "mist_1 off | ");
-        myFile.print(temperature >= tempVal1 || humidity >= humVal1 ? "mist_2 on | " : "mist_2 off | ");
-        myFile.print("trig temp 1: ");
+        myFile.print(" | Curr Temp: ");
+        myFile.print(temperature);
+        myFile.print((char)176);
+        myFile.print("C | Curr Humidity: ");
+        myFile.print(humidity);
+        myFile.print("% | trig temp 1: ");
         myFile.print(tempVal1);
-        myFile.print(" | trig temp 2: ");
+        myFile.print((char)176);
+        myFile.print("C | trig temp 2: ");
         myFile.print(tempVal2);
-        myFile.print(" | trig hmdty 1: ");
+        myFile.print((char)176);
+        myFile.print("C | trig hmdty 1: ");
         myFile.print(humVal1);
-        myFile.print(" | trig hmdty 1: ");
-        myFile.println(humVal1);
+        myFile.print("% | trig hmdty 2: ");
+        myFile.print(humVal2);
+        myFile.println("%");
         myFile.close();
     }
     else
@@ -377,7 +381,17 @@ void loop() {
 
     switch(mode)
     {
-        case 0: sdLog(); Serial.print(showTempHumid()); Serial.print(" | "); break; 
+        case 0: 
+                sdLog(); 
+                showTempHumid();
+                Serial.print(GetDateTime());
+                Serial.print(" | curr temp: ");
+                Serial.print(temperature);
+                Serial.print("°C | "); 
+                Serial.print("curr hmdty: ");
+                Serial.print(humidity);
+                Serial.print("%");
+                break; 
         case 1: setTemp(1); break;
         case 2: setTemp(2);  break;
         case 3: setHumid(1); break;
@@ -385,14 +399,14 @@ void loop() {
     }
 
     digitalWrite(relay, (temperature >= tempVal1 || humidity >= humVal1));
-    Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "relay on | " : "relay off | ");
+    //Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? " | relay on | " : " | relay off | ");
 
     digitalWrite(mist0, !(temperature >= tempVal1 || humidity >= humVal1));
-    Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "mist0 on | " : "mist0 off | ");
+    //Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "mist0 on | " : "mist0 off | ");
 
     digitalWrite(mist1, !(temperature >= tempVal2 || humidity >= humVal2));
-    Serial.print((temperature >= tempVal2 || humidity >= humVal2) ? "mist1 on | " : "mist1 off | ");
-
+    //Serial.print((temperature >= tempVal2 || humidity >= humVal2) ? "mist1 on | " : "mist1 off | ");
+    Serial.print(" | ");
     Serial.print(humidity);
     Serial.print(" | ");
     Serial.print(tempVal1);
@@ -403,32 +417,5 @@ void loop() {
     Serial.print(" | ");
     Serial.println(humVal2);
 
-    delay(250);
-}
-
-bool isOn = false;
-void onMist(int pin)
-{
-    if(!isOn)
-    {
-        isOn = true;
-        digitalWrite(pin, HIGH);
-        delay(250);
-        digitalWrite(pin, LOW);
-    }
-}
-
-void offMist(int pin)
-{
-    if(isOn)
-    {
-        isOn = false;
-        digitalWrite(pin, HIGH);
-        delay(250);
-        digitalWrite(pin, LOW);
-
-        digitalWrite(pin, HIGH);
-        delay(250);
-        digitalWrite(pin, LOW);
-    }
+    delay(50);
 }
