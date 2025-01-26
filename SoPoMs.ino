@@ -398,14 +398,14 @@ void loop() {
         case 4: setHumid(2); break;
     }
 
-    digitalWrite(relay, (temperature >= tempVal1 || humidity >= humVal1));
-    //Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? " | relay on | " : " | relay off | ");
+    digitalWrite(relay, !(temperature >= tempVal1 || humidity <= humVal1));
+    //Serial.print((temperature >= tempVal1 || humidity <= humVal1) ? " | relay on | " : " | relay off | ");
 
-    digitalWrite(mist0, !(temperature >= tempVal1 || humidity >= humVal1));
-    //Serial.print((temperature >= tempVal1 || humidity >= humVal1) ? "mist0 on | " : "mist0 off | ");
+    digitalWrite(mist0, !(temperature >= tempVal1 || humidity <= humVal1));
+    //Serial.print((temperature >= tempVal1 || humidity <= humVal1) ? "mist0 on | " : "mist0 off | ");
 
-    digitalWrite(mist1, !(temperature >= tempVal2 || humidity >= humVal2));
-    //Serial.print((temperature >= tempVal2 || humidity >= humVal2) ? "mist1 on | " : "mist1 off | ");
+    digitalWrite(mist1, !(temperature >= tempVal2 || humidity <= humVal2));
+    //Serial.print((temperature >= tempVal2 || humidity <= humVal2) ? "mist1 on | " : "mist1 off | ");
     Serial.print(" | ");
     Serial.print(humidity);
     Serial.print(" | ");
